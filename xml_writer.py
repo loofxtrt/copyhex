@@ -22,7 +22,12 @@ def normalized_svg_file(file: Path) -> Path:
     
     return file
 
-def normalize_hex_value(color_hex: str) -> str:
+def normalize_hex_value(color_hex: str) -> str | None:
+    # evitar possíveis valores nulos, pq hex deve sempre ser string
+    # se não for, é melhor deixar claro que é um valor inválido
+    if not isinstance(color_hex, str):
+        return None
+    
     # adiciona # na frente do valor hex se ele já não tiver
     if not color_hex.startswith('#'):
         color_hex = f'#{color_hex}'
@@ -35,29 +40,33 @@ def normalize_hex_value(color_hex: str) -> str:
 
     return color_hex
 
-def draw_directory(svg: ET.Element, hex_background: str, gradient_id: str, group_id: str = 'directory-group'):
+def draw_directory(
+    svg: ET.Element,
+    back_fill: str,
+    front_fill: str,
+    group_id: str = 'directory-group'
+    ):
     group = ET.SubElement(svg, 'g', {
         'id': group_id,
         'transform': 'scale(.75)'
     })
 
     # background do diretório, um retangulo com cor sólida
-    hex_background = normalize_hex_value(hex_background)
     ET.SubElement(group, 'path', {
         'd': 'm61.122 15.88c0-2.762-2.239-5-5-5h-48.244c-2.761 0-5 2.238-5 5v32.246c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-32.246z',
-        'style': f'fill:{hex_background}; fill-opacity:1',
+        'style': f'fill:{back_fill}; fill-opacity:1',
     })
 
     # parte da frente do diretório, com curvas e gradiente
     ET.SubElement(group, 'path', {
         'd': 'm61.122 20.652c0-1.326-0.527-2.598-1.465-3.536-0.938-0.937-2.209-1.464-3.535-1.464h-25.58c-1.232 0-2.42-0.455-3.337-1.277-0.768-0.689-1.713-1.535-2.481-2.224-0.917-0.822-2.105-1.277-3.337-1.277h-13.509c-1.326 0-2.597 0.527-3.535 1.465-0.938 0.937-1.465 2.209-1.465 3.535v32.252c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-27.474z',
-        'style': f'fill:url(#{gradient_id}); fill-opacity:1'
+        'style': f'fill:{front_fill}; fill-opacity:1'
     })
 
 def draw_glyph(
     svg: ET.Element,
     d_contents: str,
-    gradient_id: str,
+    fill: str,
     group_id:str = 'glyph-group',
     requires_scale: bool = True,
     transform_value: str = DEFAULT_TRANSFORM_VALUE
@@ -116,16 +125,60 @@ def draw_glyph(
 
     ET.SubElement(group, 'path', {
         'd': d_contents,
-        'style': f'fill:url(#{gradient_id}); fill-opacity:1'
+        'style': f'fill:{fill}; fill-opacity:1'
     })
 
-def generate_svg(
+def handle_fill(
+    hex_map: dict,
+    defs: ET.SubElement,
+    gradient_id: str,
+    gradient_transform: str | None = None,
+    gradient_units: str = 'userSpaceOnUse', # faz o gradiente ser relativo ao tamanho do documento
+    first_stop_offset: float = 0, # controlam onde cadas top fica
+    second_stop_offset: float = 1
+    ):
+    top = hex_map.get('top')
+    bottom = hex_map.get('bottom')
+
+    top = normalize_hex_value(top)
+    bottom = normalize_hex_value(bottom)
+
+    fill = None
+    if top and bottom:
+        first_stop_offset = str(first_stop_offset)
+        second_stop_offset = str(second_stop_offset)
+
+        attributes = {
+            'id': gradient_id,
+            'x2': '1',
+            'gradientUnits': gradient_units
+        }
+        if gradient_transform is not None:
+            attributes['gradientTransform'] = gradient_transform
+
+        gradient = ET.SubElement(defs, 'linearGradient', attributes)
+        ET.SubElement(gradient, 'stop', {
+            'style': f'stop-color:{top}',
+            'offset': first_stop_offset
+        })
+        ET.SubElement(gradient, 'stop', {
+            'style': f'stop-color:{bottom}',
+            'offset': second_stop_offset
+        })
+
+        fill = f'url(#{gradient_id})'
+    elif top:
+        fill = top
+    elif bottom:
+        fill = bottom
+
+    return fill
+
+def structure_svg(
     output_file: Path,
-    hex_directory_background: str,
-    hex_directory_dark: str,
-    hex_directory_light: str,
-    hex_glyph_dark: str,
-    hex_glyph_light: str,
+    hex_front: dict,
+    hex_back: dict,
+    hex_glyph: dict,
     glyph_d_contents: str | None = None,
     glyph_requires_scale: bool = True,
     glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE,
@@ -145,36 +198,22 @@ def generate_svg(
     # os ids definidos aqui são os que serão passados como argumentos pras outras funções auxiliares
     defs = ET.SubElement(svg, 'defs')
     
-    grad_dir = ET.SubElement(defs, 'linearGradient', {
-        'id': id_gradient_directory,
-        'x2': '1',
-        'gradientTransform': 'matrix(2.54933e-15,-41.6338,41.6338,2.54933e-15,445.153,52.7218)',
-        'gradientUnits': 'userSpaceOnUse',
-    })
-    ET.SubElement(grad_dir, 'stop', {
-        'style': f'stop-color:{hex_directory_dark}',
-        'offset': '0'
-    })
-    ET.SubElement(grad_dir, 'stop', {
-        'style': f'stop-color:{hex_directory_light}',
-        'offset': '1'
-    })
-
-    grad_glyph = ET.SubElement(defs, 'linearGradient', {
-        'id': id_gradient_glyph,
-        'x2': '1',
-        'gradientTransform': 'matrix(1.77928e-15,29.0579,-29.0579,1.77928e-15,-583.701,19.4233)',
-        'gradientUnits': 'userSpaceOnUse',
-    })
-    ET.SubElement(grad_glyph, 'stop', {
-        'style': f'stop-color:{hex_glyph_light}',
-        'offset': '0',
-    })
-    ET.SubElement(grad_glyph, 'stop', {
-        'style': f'stop-color:{hex_glyph_dark}',
-        'offset': '1',
-    })
-
+    front_fill = handle_fill(
+        hex_map=hex_front, defs=defs, gradient_id='front-gradient',
+        gradient_transform='matrix(2.54933e-15,-41.6338,41.6338,2.54933e-15,445.153,52.7218)'
+    )
+    back_fill = handle_fill(
+        hex_map=hex_back, defs=defs,
+        gradient_id='back-gradient',
+        gradient_units='objectBoundingBox', # usa 0-100% do objeto. sem isso, o gradiente fica muito comprimido
+        first_stop_offset=0.5,
+        second_stop_offset=1
+    )
+    glyph_fill = handle_fill(
+        hex_map=hex_glyph, defs=defs, gradient_id='glyph-gradient',
+        gradient_transform='matrix(1.77928e-15,29.0579,-29.0579,1.77928e-15,-583.701,19.4233)'
+    )
+    
     # grupos (<g> -> grupo)
     # o id deles é o equivalente ao nome que vai aparecer no inkscape
     #
@@ -182,15 +221,15 @@ def generate_svg(
     # o glifo por cima do ícone de diretório só vai ser desenhado se ele tiver sido passado
     draw_directory(
         svg=svg,
-        hex_background=hex_directory_background,
-        gradient_id=id_gradient_directory
+        back_fill=back_fill,
+        front_fill=front_fill
     )
     
     if glyph_d_contents is not None:
         draw_glyph(
             svg=svg,
+            fill=glyph_fill,
             d_contents=glyph_d_contents,
-            gradient_id=id_gradient_glyph,
             requires_scale=glyph_requires_scale,
             transform_value=glyph_transform_value
         )
@@ -203,177 +242,43 @@ def generate_svg(
     with output_file.open('w') as f:
         f.write(xml_str)
 
-def handle_color_map(
+def handle_palette(
     output_directory: Path,
-    c_map: dict,
+    palette: dict,
     icon_name: str,
     glyph_d_contents: str | None = None,
     glyph_requires_scale: bool = False,
     glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE
     ):
     # obter os valores do mapa
-    directory_background = c_map.get('directory-background')
-    directory_light = c_map.get('directory-light')
-    directory_dark = c_map.get('directory-dark')
-    glyph_light = c_map.get('glyph-light')
-    glyph_dark = c_map.get('glyph-dark')
+    # também junta todas elas num array depois pra ficar mais fácil de normalizar
+    background = palette.get('background')
+    background_secondary = palette.get('background-secondary')
+    directory_top = palette.get('directory-top')
+    directory_bottom = palette.get('directory-bottom')
+    glyph_top = palette.get('glyph-top')
+    glyph_bottom = palette.get('glyph-bottom')
 
-    variables = [directory_background, directory_light, directory_dark, glyph_dark, glyph_light]
+    variables = [background, background_secondary, directory_top, directory_bottom, glyph_top, glyph_bottom]
     for v in variables:
-        if v is None:
-            print(f'{v} é um valor nulo')
-            return
-        
         v = normalize_hex_value(v)
+
+    # organizar as cores em dicts que a função de estruturação do svg entenda
+    hex_front = { 'top': directory_top, 'bottom': directory_bottom }
+    hex_back =  { 'top': background,    'bottom': background_secondary }
+    hex_glyph = { 'top': glyph_top,     'bottom': glyph_bottom }
 
     # construir + normalizar o caminho final e gerar o svg
     output_directory.mkdir(parents=True, exist_ok=True)
     final = output_directory / icon_name
     final = normalized_svg_file(final)
 
-    generate_svg(
+    structure_svg(
         output_file=final,
-        hex_directory_background=directory_background,
-        hex_directory_dark=directory_dark,
-        hex_directory_light=directory_light,
-        hex_glyph_dark=glyph_dark,
-        hex_glyph_light=glyph_light,
+        hex_front=hex_front,
+        hex_back=hex_back,
+        hex_glyph=hex_glyph,
         glyph_d_contents=glyph_d_contents,
         glyph_requires_scale=glyph_requires_scale,
         glyph_transform_value=glyph_transform_value
     )
-
-# definição de nomes de ícones, quais deles usam quais glifos
-# e se alguma transformação especial deve ser aplicada a eles
-# esse mapa é sempre fixo
-directories_rules = {
-    'bookmark-missing':
-        {
-            'glyph': data.half_star
-        },
-    'folder-3dprint':
-        {
-            'glyph': data.cube_3d,
-            'requires-scale': False
-        },
-    'folder-activities':
-        {
-            'glyph': data.three_dots,
-            'transform-value': 'translate(0 .8933)'
-        },
-    'folder-add':
-        {
-            'glyph': data.plus
-        },
-    'folder-android':
-        {
-            'glyph': data.android,
-            'requires-scale': False
-        },
-    'folder-applications':
-        {
-            'glyph': data.capital_a,
-            'transform-value': 'matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)'
-        },
-    'folder-arduino':
-        {
-            'glyph': data.arduino,
-            'requires-scale': False
-        },
-    'folder-backup':
-        {
-            'glyph': data.arrow_cycle,
-            'requires-scale': False
-        },
-    'folder-books':
-        {
-            'glyph': data.book,
-            'requires-scale': False
-        },
-    'folder-cd':
-        {
-            'glyph': data.cd,
-            'transform-value': 'translate(0 -4.10918)'
-        },
-    'folder-copy-cloud':
-        {
-            'glyph': data.copy_cloud
-        },
-    'folder-documents':
-        {
-            'glyph': data.document,
-            'requires-scale': False
-        },
-    'folder-download':
-        {
-            'glyph': data.two_arrows_down
-        },
-    'folder-dropbox':
-        {
-            'glyph': data.dropbox
-        },
-    'folder-favorites':
-        {
-            'glyph': data.star
-        },
-    'folder-games':
-        {
-            'glyph': data.controller
-        },
-    'folder-gdrive':
-        {
-            'glyph': data.google_drive
-        },
-    'folder-git':
-        {
-            'glyph': data.git    
-        },
-    'folder-github':
-        {
-            'glyph': data.github
-        },
-    'folder-gitlab':
-        {
-            'glyph': data.gitlab
-        }
-}
-
-def main():
-    maps = {
-        'kora/blue': colors.blue,
-        'kora/yellow': colors.yellow,
-        'papirus/breeze': colors.breeze,
-        'papirus/brown': colors.brown,
-        #'papirus/carmine': colors.carmine,
-        'papirus/violet': colors.violet,
-        'papirus/red': colors.red,
-        'papirus/indigo': colors.indigo,
-        'papirus/yellow': colors.papirus_yellow,
-        'papirus/pale-brown': colors.pale_brown,
-        'papirus/yaru': colors.yaru,
-    }
-
-    # label é o nome que o diretório de output vai ter
-    # ex:
-    #   output/blue/<ícones de pastas azuis>
-    #   output/papirus/blue/<ícones de pastas azuis>
-    #
-    # m são os mapas de cores em si
-    for label, m in maps.items():
-        # obter o nome da chave (que vai ser o mesmo do arquivo)
-        # e o dicionário atrelado a esse nome com as propriedades necessárias pra criação de um ícone
-        for name, properties in directories_rules.items():
-            glyph_data = properties.get('glyph')
-            requires_scale = properties.get('requires-scale', True)
-            transform_value = properties.get('transform-value', 'scale(.75)')
-
-            handle_color_map(
-                output_directory=Path(f'./output/{label}'),
-                c_map=m,
-                icon_name=name,
-                glyph_d_contents=glyph_data,
-                glyph_requires_scale=requires_scale,
-                glyph_transform_value=transform_value
-            )
-
-main()

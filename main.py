@@ -1,0 +1,139 @@
+import d_contents as data
+import colors
+import xml_writer
+from pathlib import Path
+
+# definição de nomes de ícones, quais deles usam quais glifos
+# e se alguma transformação especial deve ser aplicada a eles
+# esse mapa é sempre fixo
+directories_rules = {
+    'bookmark-missing':
+        {
+            'glyph': data.half_star
+        },
+    'folder-3dprint':
+        {
+            'glyph': data.cube_3d,
+            'requires-scale': False
+        },
+    'folder-activities':
+        {
+            'glyph': data.three_dots,
+            'transform-value': 'translate(0 .8933)'
+        },
+    'folder-add':
+        {
+            'glyph': data.plus
+        },
+    'folder-android':
+        {
+            'glyph': data.android,
+            'requires-scale': False
+        },
+    'folder-applications':
+        {
+            'glyph': data.capital_a,
+            'transform-value': 'matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)'
+        },
+    'folder-arduino':
+        {
+            'glyph': data.arduino,
+            'requires-scale': False
+        },
+    'folder-backup':
+        {
+            'glyph': data.arrow_cycle,
+            'requires-scale': False
+        },
+    'folder-books':
+        {
+            'glyph': data.book,
+            'requires-scale': False
+        },
+    'folder-cd':
+        {
+            'glyph': data.cd,
+            'transform-value': 'translate(0 -4.10918)'
+        },
+    'folder-copy-cloud':
+        {
+            'glyph': data.copy_cloud
+        },
+    'folder-documents':
+        {
+            'glyph': data.document,
+            'requires-scale': False
+        },
+    'folder-download':
+        {
+            'glyph': data.two_arrows_down
+        },
+    'folder-dropbox':
+        {
+            'glyph': data.dropbox
+        },
+    'folder-favorites':
+        {
+            'glyph': data.star
+        },
+    'folder-games':
+        {
+            'glyph': data.controller
+        },
+    'folder-gdrive':
+        {
+            'glyph': data.google_drive
+        },
+    'folder-git':
+        {
+            'glyph': data.git    
+        },
+    'folder-github':
+        {
+            'glyph': data.github
+        },
+    'folder-gitlab':
+        {
+            'glyph': data.gitlab
+        }
+}
+
+def main():
+    palettes = {
+        'kora/blue': colors.blue,
+        'kora/yellow': colors.yellow,
+        'papirus/breeze': colors.breeze,
+        'papirus/brown': colors.brown,
+        #'papirus/carmine': colors.carmine,
+        'papirus/violet': colors.violet,
+        'papirus/red': colors.red,
+        'papirus/indigo': colors.indigo,
+        'papirus/yellow': colors.papirus_yellow,
+        'papirus/pale-brown': colors.pale_brown,
+        'papirus/yaru': colors.yaru,
+    }
+
+    # label é o nome que o diretório de output vai ter
+    # ex:
+    #   output/blue/<ícones de pastas azuis>
+    #   output/papirus/blue/<ícones de pastas azuis>
+    #
+    # p são os mapas de cores em si
+    for label, p in palettes.items():
+        # obter o nome da chave (que vai ser o mesmo do arquivo)
+        # e o dicionário atrelado a esse nome com as propriedades necessárias pra criação de um ícone
+        for name, properties in directories_rules.items():
+            glyph_data = properties.get('glyph')
+            requires_scale = properties.get('requires-scale', True)
+            transform_value = properties.get('transform-value', 'scale(.75)')
+
+            xml_writer.handle_palette(
+                output_directory=Path(f'./output/{label}'),
+                palette=p,
+                icon_name=name,
+                glyph_d_contents=glyph_data,
+                glyph_requires_scale=requires_scale,
+                glyph_transform_value=transform_value
+            )
+
+main()

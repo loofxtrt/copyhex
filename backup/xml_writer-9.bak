@@ -1,0 +1,248 @@
+import xml.etree.ElementTree as ET
+import d_contents as data
+import colors
+from pathlib import Path
+
+color_directory_background = '#0083d5'
+color_directory_light = '#12c5ff'
+color_directory_dark = '#1075f6'
+color_glyph_light = '#126c98'
+color_glyph_dark = '#0b4f94'
+
+id_gradient_directory = 'directory-gradient'
+id_gradient_glyph = 'glyph-gradient'
+
+DEFAULT_TRANSFORM_VALUE = 'scale(.75)'
+
+def normalized_svg_file(file: Path) -> Path:
+    if not file.name.endswith('.svg'):
+        stringfied = str(file)
+        stringfied += '.svg'
+        file = Path(stringfied)
+    
+    return file
+
+def normalize_hex_value(color_hex: str) -> str:
+    # adiciona # na frente do valor hex se ele já não tiver
+    if not color_hex.startswith('#'):
+        color_hex = f'#{color_hex}'
+    
+    # se tiver mais de 7 dígitos no hex (contando com a # no começo)
+    # obtendo apenas do índice 0 até o 7, removendo os últimos 2 (ou mais) dígitos que indicam a opacidade da cor
+    # a opacidade pode fazer a cor quebrar no svg se estiver presente. ela deve ser definida com fill-opacity
+    if len(color_hex) > 7:
+        color_hex = color_hex[:7]
+
+    return color_hex
+
+def draw_directory(
+    svg: ET.Element,
+    back_fill: str,
+    front_fill: str,
+    group_id: str = 'directory-group'
+    ):
+    group = ET.SubElement(svg, 'g', {
+        'id': group_id,
+        'transform': 'scale(.75)'
+    })
+
+    # background do diretório, um retangulo com cor sólida
+    ET.SubElement(group, 'path', {
+        'd': 'm61.122 15.88c0-2.762-2.239-5-5-5h-48.244c-2.761 0-5 2.238-5 5v32.246c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-32.246z',
+        'style': f'fill:{back_fill}; fill-opacity:1',
+    })
+
+    # parte da frente do diretório, com curvas e gradiente
+    ET.SubElement(group, 'path', {
+        'd': 'm61.122 20.652c0-1.326-0.527-2.598-1.465-3.536-0.938-0.937-2.209-1.464-3.535-1.464h-25.58c-1.232 0-2.42-0.455-3.337-1.277-0.768-0.689-1.713-1.535-2.481-2.224-0.917-0.822-2.105-1.277-3.337-1.277h-13.509c-1.326 0-2.597 0.527-3.535 1.465-0.938 0.937-1.465 2.209-1.465 3.535v32.252c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-27.474z',
+        'style': f'fill:{front_fill}; fill-opacity:1'
+    })
+
+def draw_glyph(
+    svg: ET.Element,
+    d_contents: str,
+    fill: str,
+    group_id:str = 'glyph-group',
+    requires_scale: bool = True,
+    transform_value: str = DEFAULT_TRANSFORM_VALUE
+    ):
+    """
+    desenha um glifo em um grupo, que deve ser posto em cima do ícone de diretório vazio
+    pra isso acontecer, deve se chamar essa função APÓS a draw_directory()
+
+    args:
+        svg:
+            o elemento svg principal a qual o grupo gerado por essa função deve ser adicionado
+        
+        d_contents:
+            dados que formam o desenho do glifo, presentes no <path> que o define
+        
+        gradient_id:
+            gradiente a ser usado pra colorir o glifo. deve ter sido definido antes de ser passado
+
+        group_id:
+            nome/id que o grupo gerado por essa função vai ter
+
+        requires_scale:
+            define se o glifo que vai ser desenhado precisa de alguma transformação especial
+            alguns glifos precisam, se não ficam muito pequenos, enquanto outros não precisam, se não ficam muito grandes
+            na maioria das vezes, scale(.75) já resolve, mas pode haver situações que um transform customizado deve ser passado
+            o jeito de saber quais precisam ou não é gerar os svgs com todos os glifos e olhar manualmente
+        
+        transform_value:
+            o valor customizado pra um transform. se não for passado, assume que a transformação deve usar scale(.75)
+            
+            pra saber o transform apropriado pra um glifo problemático, olha o conteúdo de texto do svg original do kora
+            lá vai ter algo como:
+            <g
+                transform="matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)" <- esse valor é o que deve ser usado
+                id=...>
+                
+                <path
+                    d=...
+                    style=...
+                    id=...
+                />
+            </g>
+
+            se o transform não estiver presente ou for simplesmente scale(0.75), não precisa passar nada pra esse argumento
+    """
+    
+    # os atributos aqui são definidos separadamente pra poder aplicar a scale só se necessário
+    attributes = {
+        'id': group_id,
+        #'transform': 'scale(.75)'
+    }
+    if requires_scale:
+        attributes['transform'] = transform_value
+    
+    group = ET.SubElement(svg, 'g', attributes)
+
+    ET.SubElement(group, 'path', {
+        'd': d_contents,
+        'style': f'fill:{fill}; fill-opacity:1'
+    })
+
+def write_svg(
+    output_file: Path,
+    hex_directory_dark: str,
+    hex_directory_light: str,
+    hex_glyph_dark: str,
+    hex_glyph_light: str,
+    glyph_d_contents: str | None = None,
+    glyph_requires_scale: bool = True,
+    glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE,
+    ):
+    # elemento <svg> principal que contém todo o conteúdo
+    # todo elemento (exceto o <xml>, se presente) deve ser um subelemento daqui
+    #
+    # esses valores nele são o que geralmente já tem no ícone base de diretório do kora
+    # ex: <svg style=x viewBox=y xmlns=z</svg>
+    svg = ET.Element('svg', {
+        'xmlns': 'http://www.w3.org/2000/svg',
+        'viewBox': '0 0 48 48',
+        'style': 'clip-rule:evenodd;fill-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2'
+    })
+
+    # definições de gradientes
+    # os ids definidos aqui são os que serão passados como argumentos pras outras funções auxiliares
+    if hex_directory_dark and hex_directory_light or hex_glyph_dark and hex_glyph_light:
+    defs = ET.SubElement(svg, 'defs')
+    
+    grad_dir = ET.SubElement(defs, 'linearGradient', {
+        'id': id_gradient_directory,
+        'x2': '1',
+        'gradientTransform': 'matrix(2.54933e-15,-41.6338,41.6338,2.54933e-15,445.153,52.7218)',
+        'gradientUnits': 'userSpaceOnUse',
+    })
+    ET.SubElement(grad_dir, 'stop', {
+        'style': f'stop-color:{hex_directory_dark}',
+        'offset': '0'
+    })
+    ET.SubElement(grad_dir, 'stop', {
+        'style': f'stop-color:{hex_directory_light}',
+        'offset': '1'
+    })
+
+    grad_glyph = ET.SubElement(defs, 'linearGradient', {
+        'id': id_gradient_glyph,
+        'x2': '1',
+        'gradientTransform': 'matrix(1.77928e-15,29.0579,-29.0579,1.77928e-15,-583.701,19.4233)',
+        'gradientUnits': 'userSpaceOnUse',
+    })
+    ET.SubElement(grad_glyph, 'stop', {
+        'style': f'stop-color:{hex_glyph_light}',
+        'offset': '0',
+    })
+    ET.SubElement(grad_glyph, 'stop', {
+        'style': f'stop-color:{hex_glyph_dark}',
+        'offset': '1',
+    })
+
+    # grupos (<g> -> grupo)
+    # o id deles é o equivalente ao nome que vai aparecer no inkscape
+    #
+    # desenhar de fato os elementos, usando sempre um diretório padrão como base
+    # o glifo por cima do ícone de diretório só vai ser desenhado se ele tiver sido passado
+    draw_directory(
+        svg=svg,
+        hex_background=hex_directory_background,
+        gradient_id=id_gradient_directory
+    )
+    
+    if glyph_d_contents is not None:
+        draw_glyph(
+            svg=svg,
+            d_contents=glyph_d_contents,
+            gradient_id=id_gradient_glyph,
+            requires_scale=glyph_requires_scale,
+            transform_value=glyph_transform_value
+        )
+
+    # indentar os conteúdos com x espaços, se não eles ficam todos numa linha só
+    ET.indent(svg, space='  ', level=0)
+
+    # converter pra string e escrever o xml gerado em um arquivo svg
+    xml_str = ET.tostring(svg, encoding='utf-8', xml_declaration=True).decode('utf-8')
+    with output_file.open('w') as f:
+        f.write(xml_str)
+
+def handle_color_map(
+    output_directory: Path,
+    c_map: dict,
+    icon_name: str,
+    glyph_d_contents: str | None = None,
+    glyph_requires_scale: bool = False,
+    glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE
+    ):
+    # obter os valores do mapa
+    directory_background = c_map.get('directory-background')
+    directory_light = c_map.get('directory-light')
+    directory_dark = c_map.get('directory-dark')
+    glyph_light = c_map.get('glyph-light')
+    glyph_dark = c_map.get('glyph-dark')
+
+    variables = [directory_background, directory_light, directory_dark, glyph_dark, glyph_light]
+    for v in variables:
+        if v is None:
+            print(f'{v} é um valor nulo')
+            return
+        
+        v = normalize_hex_value(v)
+
+    # construir + normalizar o caminho final e gerar o svg
+    output_directory.mkdir(parents=True, exist_ok=True)
+    final = output_directory / icon_name
+    final = normalized_svg_file(final)
+
+    write_svg(
+        output_file=final,
+        hex_directory_background=directory_background,
+        hex_directory_dark=directory_dark,
+        hex_directory_light=directory_light,
+        hex_glyph_dark=glyph_dark,
+        hex_glyph_light=glyph_light,
+        glyph_d_contents=glyph_d_contents,
+        glyph_requires_scale=glyph_requires_scale,
+        glyph_transform_value=glyph_transform_value
+    )
