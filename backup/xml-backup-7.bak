@@ -1,6 +1,5 @@
 import xml.etree.ElementTree as ET
 import d_contents as data
-import colors
 from pathlib import Path
 
 color_directory_background = '#0083d5'
@@ -338,25 +337,229 @@ directories_rules = {
         }
 }
 
+# mapas de cores
+template = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_blue = { # cores padrão das pastas do kora
+    'directory-background': '#0083d5',
+    'directory-light': '#12c5ff',
+    'directory-dark': '#1075f6',
+    'glyph-light': '#126c98',
+    'glyph-dark': '#0b4f94'
+}
+
+map_yellow = { # baseado no ícone winefile do kora
+    'directory-background': '#b37100',
+    'directory-light': '#edbb5f',
+    'directory-dark': '#ffa100',
+    'glyph-light': '#b67100',
+    'glyph-dark': '#9d6100'
+}
+
+# map_purple = {} # pasta padrão com color shift de 57 no inkscape
+
+# a partir daqui são cores pegas do papirus (ex: papirus breeze, papirus brown)
+map_breeze = {
+    'directory-background': '#147eb8',
+    'directory-light': '#6ecdff', # inventado
+    'directory-dark': '#4999c4ff',
+    'glyph-light': '#106796',
+    'glyph-dark': '#0d5278', # inventado
+}
+
+map_brown = {
+    'directory-background': '#7a6143ff', # inventado
+    'directory-light': '#ae8e6cff',
+    'directory-dark': '#6b5741ff', # inventado
+    'glyph-light': '#3d3226ff',
+    'glyph-dark': '#1d1811ff' # inventado
+}
+
+map_carmine = {
+    'directory-background': '#650002ff', # inventado
+    'directory-light': '#a30002ff',
+    'directory-dark': '#6e0002ff', # inventado
+    'glyph-light': '#390001ff',
+    'glyph-dark': '#200001ff' # inventado
+}
+
+map_darkcyan = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_deeporange = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_papirus = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_green = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_grey = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_indigo = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_magenta = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_nordic = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_orange = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_palebrown = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_paleorange = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_pink = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_red = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_teal = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_violet = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_white = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_yaru = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+papirus_yellow = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_bluegrey = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
+map_cyan = {
+    'directory-background': '#',
+    'directory-light': '#',
+    'directory-dark': '#',
+    'glyph-light': '#',
+    'glyph-dark': '#'
+}
+
 def main():
     maps = {
-        'kora/blue': colors.blue,
-        'kora/yellow': colors.yellow,
-        'papirus/breeze': colors.breeze,
-        'papirus/brown': colors.brown,
-        #'papirus/carmine': colors.carmine,
-        'papirus/violet': colors.violet,
-        'papirus/red': colors.red,
-        'papirus/indigo': colors.indigo,
-        'papirus/yellow': colors.papirus_yellow,
-        'papirus/pale-brown': colors.pale_brown,
-        'papirus/yaru': colors.yaru,
+        'blue': map_blue,
+        'yellow': map_yellow,
+        'breeze': map_breeze,
+        'brown': map_brown,
+        'carmine': map_carmine
     }
 
     # label é o nome que o diretório de output vai ter
-    # ex:
-    #   output/blue/<ícones de pastas azuis>
-    #   output/papirus/blue/<ícones de pastas azuis>
+    # ex: output/blue/<ícones de pastas azuis>
     #
     # m são os mapas de cores em si
     for label, m in maps.items():
