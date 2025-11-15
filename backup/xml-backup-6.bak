@@ -11,8 +11,6 @@ color_glyph_dark = '#0b4f94'
 id_gradient_directory = 'directory-gradient'
 id_gradient_glyph = 'glyph-gradient'
 
-DEFAULT_TRANSFORM_VALUE = 'scale(.75)'
-
 def normalized_svg_file(file: Path) -> Path:
     if not file.name.endswith('.svg'):
         stringfied = str(file)
@@ -53,57 +51,11 @@ def draw_directory(svg: ET.Element, hex_background: str, gradient_id: str, group
         'style': f'fill:url(#{gradient_id}); fill-opacity:1'
     })
 
-def draw_glyph(
-    svg: ET.Element,
-    d_contents: str,
-    gradient_id: str,
-    group_id:str = 'glyph-group',
-    requires_scale: bool = True,
-    transform_value: str = DEFAULT_TRANSFORM_VALUE
-    ):
-    """
-    desenha um glifo em um grupo, que deve ser posto em cima do ícone de diretório vazio
-    pra isso acontecer, deve se chamar essa função APÓS a draw_directory()
-
-    args:
-        svg:
-            o elemento svg principal a qual o grupo gerado por essa função deve ser adicionado
-        
-        d_contents:
-            dados que formam o desenho do glifo, presentes no <path> que o define
-        
-        gradient_id:
-            gradiente a ser usado pra colorir o glifo. deve ter sido definido antes de ser passado
-
-        group_id:
-            nome/id que o grupo gerado por essa função vai ter
-
-        requires_scale:
-            define se o glifo que vai ser desenhado precisa de alguma transformação especial
-            alguns glifos precisam, se não ficam muito pequenos, enquanto outros não precisam, se não ficam muito grandes
-            na maioria das vezes, scale(.75) já resolve, mas pode haver situações que um transform customizado deve ser passado
-            o jeito de saber quais precisam ou não é gerar os svgs com todos os glifos e olhar manualmente
-        
-        transform_value:
-            o valor customizado pra um transform. se não for passado, assume que a transformação deve usar scale(.75)
-            
-            pra saber o transform apropriado pra um glifo problemático, olha o conteúdo de texto do svg original do kora
-            lá vai ter algo como:
-            <g
-                transform="matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)" <- esse valor é o que deve ser usado
-                id=...>
-                
-                <path
-                    d=...
-                    style=...
-                    id=...
-                />
-            </g>
-
-            se o transform não estiver presente ou for simplesmente scale(0.75), não precisa passar nada pra esse argumento
-    """
-    
+def draw_glyph(svg: ET.Element, d_contents: str, gradient_id: str, group_id:str = 'glyph-group', requires_scale: bool = True, transform_value: str = 'scale(.75)'):
     # os atributos aqui são definidos separadamente pra poder aplicar a scale só se necessário
+    # alguns glifos precisam, se não ficam muito pequenos
+    # enquanto outros não precisam, se não ficam muito grandes
+    # o jeito de saber quais precisam ou não é gerar os svgs com todos os glifos e olhar manualmente
     attributes = {
         'id': group_id,
         #'transform': 'scale(.75)'
@@ -126,8 +78,7 @@ def generate_svg(
     hex_glyph_dark: str,
     hex_glyph_light: str,
     glyph_d_contents: str | None = None,
-    glyph_requires_scale: bool = True,
-    glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE,
+    glyph_requires_scale: bool = True
     ):
     # elemento <svg> principal que contém todo o conteúdo
     # todo elemento (exceto o <xml>, se presente) deve ser um subelemento daqui
@@ -179,20 +130,9 @@ def generate_svg(
     #
     # desenhar de fato os elementos, usando sempre um diretório padrão como base
     # o glifo por cima do ícone de diretório só vai ser desenhado se ele tiver sido passado
-    draw_directory(
-        svg=svg,
-        hex_background=hex_directory_background,
-        gradient_id=id_gradient_directory
-    )
-    
+    draw_directory(svg=svg, hex_background=hex_directory_background, gradient_id=id_gradient_directory)
     if glyph_d_contents is not None:
-        draw_glyph(
-            svg=svg,
-            d_contents=glyph_d_contents,
-            gradient_id=id_gradient_glyph,
-            requires_scale=glyph_requires_scale,
-            transform_value=glyph_transform_value
-        )
+        draw_glyph(svg=svg, d_contents=glyph_d_contents, gradient_id=id_gradient_glyph, requires_scale=glyph_requires_scale)
 
     # indentar os conteúdos com x espaços, se não eles ficam todos numa linha só
     ET.indent(svg, space='  ', level=0)
@@ -207,8 +147,7 @@ def handle_color_map(
     c_map: dict,
     icon_name: str,
     glyph_d_contents: str | None = None,
-    glyph_requires_scale: bool = False,
-    glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE
+    glyph_requires_scale: bool = False
     ):
     # obter os valores do mapa
     directory_background = c_map.get('directory-background')
@@ -238,106 +177,9 @@ def handle_color_map(
         hex_glyph_dark=glyph_dark,
         hex_glyph_light=glyph_light,
         glyph_d_contents=glyph_d_contents,
-        glyph_requires_scale=glyph_requires_scale,
-        glyph_transform_value=glyph_transform_value
+        glyph_requires_scale=glyph_requires_scale
     )
 
-# definição de nomes de ícones, quais deles usam quais glifos
-# e se alguma transformação especial deve ser aplicada a eles
-# esse mapa é sempre fixo
-directories_rules = {
-    'bookmark-missing':
-        {
-            'glyph': data.half_star
-        },
-    'folder-3dprint':
-        {
-            'glyph': data.cube_3d,
-            'requires-scale': False
-        },
-    'folder-activities':
-        {
-            'glyph': data.three_dots,
-            'transform-value': 'translate(0 .8933)'
-        },
-    'folder-add':
-        {
-            'glyph': data.plus
-        },
-    'folder-android':
-        {
-            'glyph': data.android,
-            'requires-scale': False
-        },
-    'folder-applications':
-        {
-            'glyph': data.capital_a,
-            'transform-value': 'matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)'
-        },
-    'folder-arduino':
-        {
-            'glyph': data.arduino,
-            'requires-scale': False
-        },
-    'folder-backup':
-        {
-            'glyph': data.arrow_cycle,
-            'requires-scale': False
-        },
-    'folder-books':
-        {
-            'glyph': data.book,
-            'requires-scale': False
-        },
-    'folder-cd':
-        {
-            'glyph': data.cd,
-            'transform-value': 'translate(0 -4.10918)'
-        },
-    'folder-copy-cloud':
-        {
-            'glyph': data.copy_cloud
-        },
-    'folder-documents':
-        {
-            'glyph': data.document,
-            'requires-scale': False
-        },
-    'folder-download':
-        {
-            'glyph': data.two_arrows_down
-        },
-    'folder-dropbox':
-        {
-            'glyph': data.dropbox
-        },
-    'folder-favorites':
-        {
-            'glyph': data.star
-        },
-    'folder-games':
-        {
-            'glyph': data.controller
-        },
-    'folder-gdrive':
-        {
-            'glyph': data.google_drive
-        },
-    'folder-git':
-        {
-            'glyph': data.git    
-        },
-    'folder-github':
-        {
-            'glyph': data.github
-        },
-    'folder-gitlab':
-        {
-            'glyph': data.gitlab
-        }
-}
-
-# mapas de cores
 map_blue = {
     'directory-background': '#0083d5',
     'directory-light': '#12c5ff',
@@ -346,39 +188,60 @@ map_blue = {
     'glyph-dark': '#0b4f94'
 }
 
-map_yellow = {
-    'directory-background': '#b37100',
-    'directory-light': '#edbb5f',
-    'directory-dark': '#ffa100',
-    'glyph-light': '#b67100',
-    'glyph-dark': '#9d6100'
+dir_map = {
+    'bookmark-missing':
+        { 'glyph': data.half_star },
+    'folder-3dprint':
+        { 'glyph': data.cube_3d, 'requires-scale': False },
+    'folder-activities':
+        { 'glyph': data.three_dots, 'requires-scale': False },
+    'folder-add':
+        { 'glyph': data.plus },
+    'folder-android':
+        { 'glyph': data.android, 'requires-scale': False },
+    'folder-applications':
+        { 'glyph': data.capital_a, 'requires-scale': False },
+    'folder-arduino':
+        { 'glyph': data.arduino, 'requires-scale': False },
+    'folder-backup':
+        { 'glyph': data.arrow_cycle, 'requires-scale': False },
+    'folder-books':
+        { 'glyph': data.book, 'requires-scale': False },
+    'folder-cd':
+        { 'glyph': data.cd, 'requires-scale': False },
+    'folder-copy-cloud':
+        { 'glyph': data.copy_cloud },
+    'folder-documents':
+        { 'glyph': data.document, 'requires-scale': False },
+    'folder-download':
+        { 'glyph': data.two_arrows_down },
+    'folder-dropbox':
+        { 'glyph': data.dropbox },
+    'folder-favorites':
+        { 'glyph': data.star },
+    'folder-games':
+        { 'glyph': data.controller },
+    'folder-gdrive':
+        { 'glyph': data.google_drive },
+    'folder-git':
+        { 'glyph': data.git },
+    'folder-github':
+        { 'glyph': data.github },
+    'folder-gitlab':
+        { 'glyph': data.gitlab }
 }
 
 def main():
-    maps = {
-        'blue': map_blue,
-        'yellow': map_yellow
-    }
-
-    # label é o nome que o diretório de output vai ter
-    # ex: output/blue/<ícones de pastas azuis>
-    #
-    # m são os mapas de cores em si
-    for label, m in maps.items():
-        # obter o nome da chave (que vai ser o mesmo do arquivo)
-        # e o dicionário atrelado a esse nome com as propriedades necessárias pra criação de um ícone
-        for name, properties in directories_rules.items():
-            glyph_data = properties.get('glyph')
-            requires_scale = properties.get('requires-scale', True)
-            transform_value = properties.get('transform-value', 'scale(.75)')
-
-            handle_color_map(
-                output_directory=Path(f'./output/{label}'),
-                c_map=m,
-                icon_name=name,
-                glyph_d_contents=glyph_data,
-                glyph_requires_scale=requires_scale,
-                glyph_transform_value=transform_value
-            )
+    for name, properties in dir_map.items():
+        glyph_data = properties.get('glyph')
+        requires_scale = properties.get('requires-scale', True)
+    
+        handle_color_map(
+            output_directory=Path('./output/test'),
+            c_map=map_blue,
+            icon_name=name,
+            glyph_d_contents=glyph_data,
+            glyph_requires_scale=requires_scale
+        )
 
 main()
