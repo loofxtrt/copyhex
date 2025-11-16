@@ -171,7 +171,8 @@ directories_rules = {
     },
     'folder-sync': {
         'glyph': data.cycle,
-        'transform-value': 'matrix(1.19103,0,0,1.19103,-4.58469,-9.17259)'
+        'transform-value': 'matrix(1.19103,0,0,1.19103,-4.58469,-9.17259)',
+        #'requires-scale': False
     },
     'folder-syncthing': {
         'glyph': data.syncthing,
@@ -194,6 +195,7 @@ directories_rules = {
         'glyph': data.padlock_open,
         'transform-value': 'matrix(1.1972,0,0,1.1972,14.4224,15.3118)',
         'gradient-transform': 'matrix(0 13.9999 -16.5009 0 -718.435 .999812)'
+        #'requires-scale': False
     },
     'folder-vbox': {
         'glyph': data.vbox

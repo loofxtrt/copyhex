@@ -5,8 +5,6 @@ from pathlib import Path
 
 # definição de nomes de ícones, quais deles usam quais glifos
 # e se alguma transformação especial deve ser aplicada a eles
-# se assume que se requires-scale não for explicitamente false, é pq é true
-# se um ícone do kora for repetido, só precisa referenciar a mesma var do data, não criar outro ícone idêntico
 # esse mapa é sempre fixo
 directories_rules = {
     'bookmark-missing': {
@@ -48,8 +46,7 @@ directories_rules = {
         'transform-value': 'translate(0 -4.10918)'
     },
     'folder-copy-cloud': {
-        'glyph': data.copy_cloud,
-        'transform-value': 'matrix(.562491 0 0 .562491 5.66523 5.12787)'
+        'glyph': data.copy_cloud
     },
     'folder-documents': {
         'glyph': data.document,
@@ -69,13 +66,6 @@ directories_rules = {
     },
     'folder-gdrive': {
         'glyph': data.google_drive
-    },
-    'folder-go': {
-        'glyph': data.go,
-        'requires-scale': False
-    },
-    'folder-gnome': {
-        'glyph': data.gnome
     },
     'folder-git': {
         'glyph': data.git    
@@ -112,97 +102,6 @@ directories_rules = {
     },
     'folder-mail': {
         'glyph': data.at
-    },
-    'folder-meocloud': {
-        'glyph': data.cloud,
-    },
-    'folder-mega': {
-        'glyph': data.mega
-    },
-    'folder-music': {
-        'glyph': data.musical_note
-    },
-    'network-manager': {
-        'glyph': data.wifi
-    },
-    'folder-owncloud': {
-        'glyph': data.owncloud
-    },
-    'folder-pcloud': {
-        'glyph': data.pcloud
-    },
-    'folder-java': {
-        'glyph': data.java
-    },
-    #'folder-pictures': {
-    #    'glyph': data.camera
-    #},
-    'folder-print': {
-        'glyph': data.printer
-    },
-    'folder-private': {
-        'glyph': data.key
-    },
-    'folder-publicshare': {
-        'glyph': data.stickman_walking,
-        'requires-scale': False
-    },
-    'folder-recent': {
-        'glyph': data.clock
-    },
-    'folder-remote': {
-        'glyph': data.plug
-    },
-    'folder-root': {
-        'glyph': data.slash
-    },
-    'folder-saved-search': {
-        'glyph': data.cog
-    },
-    'folder-script': {
-        'glyph': data.dollar
-    },
-    'folder-snap': {
-        'glyph': data.snap,
-        'requires-scale': False
-    },
-    'folder-steam': {
-        'glyph': data.steam
-    },
-    'folder-sync': {
-        'glyph': data.cycle,
-        'transform-value': 'matrix(1.19103,0,0,1.19103,-4.58469,-9.17259)'
-    },
-    'folder-syncthing': {
-        'glyph': data.syncthing,
-        'requires-scale': False
-    },
-    'folder-system': {
-        'glyph': data.penguin_left
-    },
-    'folder-templates': {
-        'glyph': data.template_file,
-        'requires-scale': False
-    },
-    'folder-text': {
-        'glyph': data.text
-    },
-    'folder-torrent': {
-        'glyph': data.torrent
-    },
-    'folder-unlocked': {
-        'glyph': data.padlock_open,
-        'transform-value': 'matrix(1.1972,0,0,1.1972,14.4224,15.3118)',
-        'gradient-transform': 'matrix(0 13.9999 -16.5009 0 -718.435 .999812)'
-    },
-    'folder-vbox': {
-        'glyph': data.vbox
-    },
-    'folder-wine': {
-        'glyph': data.windows
-    },
-    'folder-yandex-disk': {
-        'glyph': data.yandex_disk
     }
 }
 
@@ -232,18 +131,18 @@ def main():
     #   output/papirus/blue/<ícones de pastas azuis>
     #
     # p são os mapas de cores em si
-    for label, palette in palettes.items():
+    for label, p in palettes.items():
         # obter o nome da chave (que vai ser o mesmo do arquivo)
         # e o dicionário atrelado a esse nome com as propriedades necessárias pra criação de um ícone
         for name, properties in directories_rules.items():
-            glyph_data         = properties.get('glyph')
-            requires_scale     = properties.get('requires-scale', True) # assumir que a princípio tudo precisa de scale
-            transform_value    = properties.get('transform-value', xml_writer.DEFAULT_TRANSFORM_VALUE)
+            glyph_data = properties.get('glyph')
+            requires_scale = properties.get('requires-scale', True)
+            transform_value = properties.get('transform-value', xml_writer.DEFAULT_TRANSFORM_VALUE)
             gradient_transform = properties.get('gradient-transform', xml_writer.DEFAULT_GLYPH_GRADIENT_TRANSFORM)
 
             xml_writer.handle_palette(
                 output_directory=Path(f'./output/{label}'),
-                palette=palette,
+                palette=p,
                 icon_name=name,
                 glyph_d_contents=glyph_data,
                 glyph_requires_scale=requires_scale,

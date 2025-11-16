@@ -139,7 +139,7 @@ orange = {
 }
 
 pale_brown = {
-    'background': '#bea389ff',
+    'background': '#a48d76ff', # inventado
     'directory-top': '#a7947fff', # inventado
     'directory-bottom': '#d1bfaeff',
     'glyph-top': '#998171ff', # inventado

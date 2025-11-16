@@ -47,23 +47,6 @@ def draw_directory(
     front_fill: str,
     group_id: str = 'directory-group'
     ):
-    """
-    args:
-        svg:
-            o elemento svg principal a qual o grupo gerado por essa função deve ser adicionado
-        
-        back_fill:
-            preenchimento da parte de trás da pasta, geralmente é uma cor sólida
-            se for um gradiente, deve ser passado com a formatação #(id-do-gradiente)
-
-        front_fill:
-            preenchimento da parte da frente da pasta, geralmente é um gradiente
-            a mesma regra de formatação vale do argumento anterior também vale pra esse
-        
-        group_id:
-            nome/id que o grupo gerado por essa função vai ter
-    """
-
     group = ET.SubElement(svg, 'g', {
         'id': group_id,
         'transform': 'scale(.75)'
@@ -85,10 +68,10 @@ def draw_glyph(
     svg: ET.Element,
     d_contents: str,
     fill: str,
-    requires_scale: bool,
-    transform_value: str,
-    gradient_transform: str,
-    group_id:str = 'glyph-group'
+    group_id:str = 'glyph-group',
+    requires_scale: bool = True,
+    transform_value: str = DEFAULT_TRANSFORM_VALUE,
+    gradient_transform: str = DEFAULT_GLYPH_GRADIENT_TRANSFORM
     ):
     """
     desenha um glifo em um grupo, que deve ser posto em cima do ícone de diretório vazio
@@ -101,17 +84,41 @@ def draw_glyph(
         d_contents:
             dados que formam o desenho do glifo, presentes no <path> que o define
         
-        fill:
-            o que deve ser usado pra preencher o glifo
-            se for um gradiente deve ser passado com a formatação #(id-do-gradiente)
+        gradient_id:
+            gradiente a ser usado pra colorir o glifo. deve ter sido definido antes de ser passado
 
         group_id:
             nome/id que o grupo gerado por essa função vai ter
+
+        requires_scale:
+            define se o glifo que vai ser desenhado precisa de alguma transformação especial
+            alguns glifos precisam, se não ficam muito pequenos, enquanto outros não precisam, se não ficam muito grandes
+            na maioria das vezes, scale(.75) já resolve, mas pode haver situações que um transform customizado deve ser passado
+            o jeito de saber quais precisam ou não é gerar os svgs com todos os glifos e olhar manualmente
+        
+        transform_value:
+            o valor customizado pra um transform. se não for passado, assume que a transformação deve usar scale(.75)
+            
+            pra saber o transform apropriado pra um glifo problemático, olha o conteúdo de texto do svg original do kora
+            lá vai ter algo como:
+            <g
+                transform="matrix(1.32032,0,0,1.17497,-11.3269,-6.98679)" <- esse valor é o que deve ser usado
+                id=...>
+                
+                <path
+                    d=...
+                    style=...
+                    id=...
+                />
+            </g>
+
+            se o transform não estiver presente ou for simplesmente scale(0.75), não precisa passar nada pra esse argumento
     """
     
-    # os atributos aqui são definidos separadamente pra poder aplicar o transform só se necessário
+    # os atributos aqui são definidos separadamente pra poder aplicar a scale só se necessário
     attributes = {
         'id': group_id,
+        #'transform': 'scale(.75)'
     }
     if requires_scale:
         attributes['transform'] = transform_value
@@ -132,50 +139,17 @@ def handle_fill(
     first_stop_offset: float = 0, # controlam onde cadas top fica
     second_stop_offset: float = 1
     ):
-    """
-    define um gradiente dentro do elemento defs
-    e retorna a forma certa de referenciar o mesmo
-    
-    args:
-        hex_map:
-            duas cores, já parseadas da paleta, que devem ser usadas pra criar o gradiente
-            se não forem duas cores, vai ser considerado uma cor solida
-            que não precisa ser realmente declarada, então só retorna a referencia certa e ela
-        
-        defs:
-            subelemento, <defs>, onde as definições feitas por essa função devem ficar
-        
-        gradient_id:
-            id que o gradiente gerado deve ter. isso é usado pra referenciar ele
-        
-        gradient_transform:
-            transformações específicas (tamanho, posição etc.) pro gradiente
-        
-        gradient_units:
-            não sei, mas funciona na maioria das vezes
-        
-        first_stop_offset:
-            posição da primeira cor
-        
-        second_stop_offset:
-            posição da segunda cor
-    """
-
-    # obter as cores a partir das chaves esperadas do mapa e normalizar elas
     top = hex_map.get('top')
     bottom = hex_map.get('bottom')
 
     top = normalize_hex_value(top)
     bottom = normalize_hex_value(bottom)
 
-    fill = None # até o final da func deve parar de ser nulo
+    fill = None
     if top and bottom:
-        # converter os valores pra string pra não dar erro
         first_stop_offset = str(first_stop_offset)
         second_stop_offset = str(second_stop_offset)
 
-        # definir os atributos do gradiente, adicionando o transform
-        # apenas caso ele esteja presente, já que não é tão comum
         attributes = {
             'id': gradient_id,
             'x2': '1',
@@ -184,24 +158,18 @@ def handle_fill(
         if gradient_transform is not None:
             attributes['gradientTransform'] = gradient_transform
 
-        # criar o gradiente e os tops que ele deve ter
         gradient = ET.SubElement(defs, 'linearGradient', attributes)
-        
         ET.SubElement(gradient, 'stop', {
             'style': f'stop-color:{top}',
             'offset': first_stop_offset
         })
-        
         ET.SubElement(gradient, 'stop', {
             'style': f'stop-color:{bottom}',
             'offset': second_stop_offset
         })
-        
-        # gradientes devem ser referenciados assim no svg
+
         fill = f'url(#{gradient_id})'
     elif top:
-        # usa a cor pura se não tiver mais de duas
-        # se assume que isso significa que não deve ser um gradiente
         fill = top
     elif bottom:
         fill = bottom
@@ -219,60 +187,7 @@ def structure_svg(
     glyph_gradient_transform: str = DEFAULT_GLYPH_GRADIENT_TRANSFORM
     ):
     """
-    args:
-        output_file:
-            caminho completo, já construído, de onde o svg criado por essa função deve parar
 
-        hex_front:
-            paleta de cores que a frente do diretório deve ter
-            ex: directory-top, directory-bottom
-        
-        hex_back:
-            paleta de cores que o fundo do diretório deve ter
-            no kora geralmente o background é sólido, mas se passar duas cores, vira gradiente
-            ex: background, background-secondary
-            ex: background
-        
-        hex_glyph:
-            paleta de cores que o glifo (desenho em cima do diretório) deve ter
-
-        glyph_d_contents:
-            os conteúdos dentro da propriedade 'd=' que os <path> têm
-            isso é o que define a forma do path
-        
-        glyph_requires_scale:
-            alguns glifos do kora podem precisar de um 'transform=' no <g> que contém o glifo
-            isso acontece no glifo da folder-add.svg, onde o ícone quebra se não tiver o transform aplicado
-            alguns precisam, se não ficam muito pequenos, enquanto outros não precisam, se não ficam muito grandes
-
-            se assume que a maioria que precisa disso, deve ter o valor do transform como scale(.75)
-            mas podem haver casos onde o valor pode ser diferente, como o folder-locked, que usa matrix(...)
-
-            nos ícones originais, geralmente fica no próprio glifo/o grupo que o comporta
-
-            na maioria das vezes, scale(.75) já resolve, mas pode haver situações que um transform customizado deve ser passado
-            o jeito de saber quais precisam ou não é: gerar os svgs com todos os glifos e olhar manualmente
-
-            TODO: trocar o nome cabuloso desse argumento que dá a entender que só o scale é passável no transform
-
-        glyph_transform_value:
-            o valor que é usado quando o transform é aplicado
-            pode variar de glifo pra glifo, mas a maioria, quando usa, é scale(.75)
-            
-            pra saber o transform apropriado pra um glifo problemático,
-            se deve olhar o conteúdo de texto do svg original. lá vai ter algo como:
-            <g
-                transform="matrix(...)" <- esse valor é o que deve ser usado
-                <path d=... style=... id=.../>
-            </g>
-
-            se o transform não estiver presente ou for simplesmente scale(0.75),
-            não precisa passar nada pra esse argumento, já assume isso como valor padrão
-
-        glyph_gradient_transform:
-            se a posição/tamanho do gradiente do glifo precisar ser mudado
-            geralmente acontece quando o ícone não é tão grande, o que faz o gradiente ser difícil de ver
-            nos ícones originais, geralmente fica na definição do gradiente
     """
     
     # elemento <svg> principal que contém todo o conteúdo
@@ -298,7 +213,7 @@ def structure_svg(
         hex_map=hex_back, defs=defs,
         gradient_id='back-gradient',
         gradient_units='objectBoundingBox', # usa 0-100% do objeto. sem isso, o gradiente fica muito comprimido
-        first_stop_offset=0.5,              # só faz diferença nos que de fato usam gradientes como background
+        first_stop_offset=0.5,
         second_stop_offset=1
     )
     glyph_fill = handle_fill(
@@ -306,6 +221,9 @@ def structure_svg(
         gradient_transform=glyph_gradient_transform,
     )
     
+    # grupos (<g> -> grupo)
+    # o id deles é o equivalente ao nome que vai aparecer no inkscape
+    #
     # desenhar de fato os elementos, usando sempre um diretório padrão como base
     # o glifo por cima do ícone de diretório só vai ser desenhado se ele tiver sido passado
     draw_directory(
@@ -336,10 +254,10 @@ def handle_palette(
     output_directory: Path,
     palette: dict,
     icon_name: str,
-    glyph_d_contents: str | None,
-    glyph_requires_scale: bool,
-    glyph_transform_value: str,
-    glyph_gradient_transform: str
+    glyph_d_contents: str | None = None,
+    glyph_requires_scale: bool = False,
+    glyph_transform_value: str = DEFAULT_TRANSFORM_VALUE,
+    glyph_gradient_transform: str = DEFAULT_GLYPH_GRADIENT_TRANSFORM
     ):
     """
     a partir de uma paleta de cores, organiza os valores dela em variáveis e os normaliza
@@ -353,19 +271,19 @@ def handle_palette(
 
     args:
         output_directory:
-            diretório onde o arquivo svg deve ficar, SEM O NOME DO ARQUIVO INCLUÍDO
+            diretório onde o arquivo svg deve ficar
         
         palette:
             um dicionário que contém múltiplas chaves específicas
             chaves essas que determinam cores dentro do arquivo
             ex: directory-bottom representa a cor mais escura do gradiente do ícone de diretório
         
-        icon_name:
-            nome do arquivo svg final
-
         glyph_d_contents:
             os conteúdos dentro da propriedade 'd=' que os <path> têm
             isso é o que define a forma do path
+        
+        glyph_requires_scale:
+            
     """
 
     # obter os valores do mapa
