@@ -5,8 +5,13 @@ from pathlib import Path
 
 # definição de nomes de ícones, quais deles usam quais glifos
 # e se alguma transformação especial deve ser aplicada a eles
+#
 # se assume que se requires-scale não for explicitamente false, é pq é true
 # se um ícone do kora for repetido, só precisa referenciar a mesma var do data, não criar outro ícone idêntico
+#
+# transform-value = transform pro grupo inteiro do glifo
+# gradient-transform = transform aplicado só ao gradiente do glifo
+#
 # esse mapa é sempre fixo
 directories_rules = {
     'bookmark-missing': {
@@ -203,6 +208,11 @@ directories_rules = {
     },
     'folder-yandex-disk': {
         'glyph': data.yandex_disk
+    },
+    'folder-projects': {
+        'glyph': data.projects,
+        'transform-value': 'matrix(0.82391613,0,0,0.82391613,-1.9533582,-6.4670396)', # decidido editando manualmente o svg
+        'gradient-transform': 'matrix(0,29.0579,-29.0579,0,-583.701,19.4233)'
     }
 }
 
