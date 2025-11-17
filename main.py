@@ -10,6 +10,7 @@ from pathlib import Path
 # e outras configurações necessárias pra cada ícone
 # e se alguma transformação especial deve ser aplicada a eles
 directories_rules = {
+    'folder': None,
     'bookmark-missing': glyphs.half_star,
     #'folder-3dprint': glyphs._3dprint,
     'folder-activities': glyphs.activities,
@@ -33,7 +34,7 @@ directories_rules = {
     'folder-github': glyphs.github,
     'folder-gitlab': glyphs.gitlab,
     'folder-html': glyphs.globe,
-    'folder-image': glyphs.pictures,
+    'folder-image': glyphs.image,
     'folder-image-people': glyphs.image_people,
     'folder-important': glyphs.important,
     'folder-kde': glyphs.kde,
@@ -71,6 +72,10 @@ directories_rules = {
     'user-home': glyphs.home,
     'folder-development': glyphs.development,
     'folder-videos': glyphs.videos,
+    'folder-pictures': glyphs.pictures,
+    'user-share': glyphs.user_share,
+    'folder-tar': glyphs.tar,
+    'folder-nextcloud': glyphs.nextcloud,
 }
 
 # associa cada paleta de cor a um label
