@@ -102,8 +102,8 @@ def main():
         # e o dicionário atrelado a esse nome, que deve ter as propriedades necessárias pra criação de um ícone
         for icon_name, glyph in directories_rules.items():
             xml_writer.handle_palette(
-                #output_directory=Path(f'/mnt/seagate/symlinks/kde-user-icons/copycat/reserved/folder-flavors/{label}'),
-                output_directory=Path(f'./output/{label}'),
+                output_directory=Path(f'/mnt/seagate/symlinks/kde-user-icons/copycat/reserved/folder-flavors/{label}'),
+                #output_directory=Path(f'./output/{label}'),
                 palette=palette,
                 icon_name=icon_name,
                 glyph=glyph
