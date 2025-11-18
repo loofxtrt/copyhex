@@ -112,7 +112,6 @@ def main():
         src=Path('reserved-ABOUT.md'),
         dst=reserved / 'ABOUT.md'
     )
-    print(reserved / 'ABOUT.md')
 
     # fazer a criação dos ícones pra cada paleta definida
     for label, palette in palettes.items():
