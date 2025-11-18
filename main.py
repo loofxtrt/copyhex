@@ -84,6 +84,7 @@ directories_rules = {
 palettes = {
     'kora/blue': colors.blue,
     'kora/yellow': colors.yellow,
+    'kora/red': colors.red,
     'papirus/breeze': colors.breeze,
     'papirus/brown': colors.brown,
     #'papirus/carmine': colors.carmine,

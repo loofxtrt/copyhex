@@ -24,6 +24,14 @@ yellow = { # baseado no ícone winefile
     'glyph-bottom': '#9d6100'
 }
 
+red = { # baseado no ícone filezilla
+    'background': '#851403ff',
+    'directory-top': '#771100ff',
+    'directory-bottom': '#e92a14ff',
+    'glyph-top': '#812303ff',
+    'glyph-bottom': '#480e03ff'
+}
+
 # --- papirus ---
 # a partir daqui são cores pegas do papirus (ex: papirus breeze, papirus brown)
 breeze = {
@@ -162,7 +170,7 @@ pink = {
     'glyph-bottom': '#'
 }
 
-red = {
+paprius_red = {
     'background': '#813333ff',
     'directory-top': '#883131ff',
     'directory-bottom': '#e25252ff',
