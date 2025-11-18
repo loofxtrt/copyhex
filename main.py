@@ -1,6 +1,7 @@
 import glyphs
 import colors
 import xml_writer
+import shutil
 from pathlib import Path
 
 # definição de nomes de ícones, quais deles usam quais glifos
@@ -102,13 +103,24 @@ def main():
     as labels das paletas definem o caminho onde uma variação de diretórios vai ser criada
     """
 
+    # definir o diretório base onde as ações devem ser aplicadas
+    # e copiar o documento sobre o diretório reserved pro destino dele
+    repo = Path('/mnt/seagate/symlinks/copycat-repo')
+    reserved = repo / 'reserved'
+    reserved.mkdir(exist_ok=True, parents=True)
+    shutil.copy2(
+        src=Path('reserved-ABOUT.md'),
+        dst=reserved / 'ABOUT.md'
+    )
+    print(reserved / 'ABOUT.md')
+
     # fazer a criação dos ícones pra cada paleta definida
     for label, palette in palettes.items():
         # nas regras, obter o nome da chave (que vai ser o mesmo nome do ícone)
         # e o dicionário atrelado a esse nome, que deve ter as propriedades necessárias pra criação de um ícone
         for icon_name, glyph in directories_rules.items():
             xml_writer.handle_palette(
-                output_directory=Path(f'/mnt/seagate/symlinks/kde-user-icons/copycat/reserved/folder-flavors/{label}'),
+                output_directory=Path(f'{reserved}/folder-flavors/{label}'),
                 #output_directory=Path(f'./output/{label}'),
                 palette=palette,
                 icon_name=icon_name,
