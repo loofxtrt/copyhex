@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 48 48"
+   style="clip-rule:evenodd;fill-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="folder-add.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="16.75"
+     inkscape:cx="24.029851"
+     inkscape:cy="24"
+     inkscape:window-width="1920"
+     inkscape:window-height="1012"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g6" />
+  <defs
+     id="defs4">
+    <linearGradient
+       id="front-gradient"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="0"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(2.54933e-15,-41.6338,41.6338,2.54933e-15,445.153,52.7218)">
+      <stop
+         style="stop-color:#1075f6"
+         offset="0"
+         id="stop1" />
+      <stop
+         style="stop-color:#12c5ff"
+         offset="1"
+         id="stop2" />
+    </linearGradient>
+    <linearGradient
+       id="glyph-gradient"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="0"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.77928e-15,29.0579,-29.0579,1.77928e-15,-583.701,19.4233)">
+      <stop
+         style="stop-color:#126c98"
+         offset="0"
+         id="stop3" />
+      <stop
+         style="stop-color:#0b4f94"
+         offset="1"
+         id="stop4" />
+    </linearGradient>
+  </defs>
+  <g
+     id="directory-group"
+     transform="scale(.75)">
+    <path
+       d="m61.122 15.88c0-2.762-2.239-5-5-5h-48.244c-2.761 0-5 2.238-5 5v32.246c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-32.246z"
+       style="fill:#0083d5; fill-opacity:1"
+       id="path4" />
+    <path
+       d="m61.122 20.652c0-1.326-0.527-2.598-1.465-3.536-0.938-0.937-2.209-1.464-3.535-1.464h-25.58c-1.232 0-2.42-0.455-3.337-1.277-0.768-0.689-1.713-1.535-2.481-2.224-0.917-0.822-2.105-1.277-3.337-1.277h-13.509c-1.326 0-2.597 0.527-3.535 1.465-0.938 0.937-1.465 2.209-1.465 3.535v32.252c0 2.761 2.239 5 5 5h48.244c2.761 0 5-2.239 5-5v-27.474z"
+       style="fill:url(#front-gradient); fill-opacity:1"
+       id="path5" />
+  </g>
+  <g
+     transform="scale(.75)"
+     id="g6"
+     inkscape:label="glyph-group">
+    <path
+       d="m20.424 31.301h8.544v-8.545h6.064v8.545h8.544v6.063h-8.544v8.545h-6.064v-8.545h-8.544v-6.063z"
+       style="fill:url(#glyph-gradient); fill-opacity:1"
+       id="path6" />
+  </g>
+</svg>
