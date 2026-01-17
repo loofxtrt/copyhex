@@ -26,8 +26,7 @@ DEFAULT = Palette(
     base_light='#12c5ff',
     base_dark='#1075f6',
     glyph_light='#126c98',
-    glyph_dark='#0b4f94',
-    identifier='default'
+    glyph_dark='#b67100'
 )
 
 # baseado no ícone winefile
@@ -98,10 +97,13 @@ def declare_glyph_gradient(defs, palette: Palette):
 
 def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
     for f in fields(DEFAULT):
+        if f is None:
+            continue
+
         old = getattr(DEFAULT, f.name)
         new = getattr(new_palette, f.name)
 
-        if new is None or old is None:
+        if new or old is None:
             continue
     
         svg_string = svg_string.replace(old, new)
@@ -109,8 +111,6 @@ def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
     return svg_string
 
 def draw_directory(base: Path, glyph: Path, output_directory: Path, palette: Palette = DEFAULT):
-    output_directory.mkdir(exist_ok=True, parents=True)
-
     glyph_group = get_glyph(glyph)
     if glyph_group is None:
         print(f'x > glyph group não encontrado para {glyph.name}')
@@ -166,11 +166,11 @@ GLYPHS = TEMPLATES / 'glyphs'
 BASES = [TEMPLATES / 'folder.svg', TEMPLATES / 'folder-outer.svg']
 
 for glyph in GLYPHS.rglob('*.svg'):
-    for base in BASES:
+    for base in [TEMPLATES / 'folder.svg', TEMPLATES / 'folder-outer.svg']:
         for palette in [DEFAULT, yellow]:
-            output = OUTPUT / base.stem
+            output = OUTPUT
             if palette.identifier is not None:
-                output = output / palette.identifier
+                output = OUTPUT / palette.identifier
 
             draw_directory(
                 base=base,
