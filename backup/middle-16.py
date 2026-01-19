@@ -12,18 +12,6 @@ namespace = {
     'ink': inkscape_ns
 }
 
-def normalize_hex_value(value: str):
-    if not value.startswith('#'):
-        value = f'#{value}'
-
-    # 6 + 1 pq a hashtag conta como caractere,
-    # então no total um código comum de hex tem 7 chars
-    if len(value) > 7 and value.endswith('ff'):
-        value = value.removesuffix('ff')
-
-    print(f'valor normalizado: {value}')
-    return value
-
 @dataclass
 class Palette:
     background: str
@@ -33,15 +21,6 @@ class Palette:
     glyph_light: str
     identifier: str = None
 
-    def __post_init__(self):
-        for f in fields(self):
-            if f.name == 'identifier':
-                continue
-
-            value = getattr(self, f.name)
-            normalized = normalize_hex_value(value)
-            setattr(self, f.name, normalized)
-
 DEFAULT = Palette(
     background='#0083d5',
     base_light='#12c5ff',
@@ -49,16 +28,6 @@ DEFAULT = Palette(
     glyph_light='#126c98',
     glyph_dark='#0b4f94',
     identifier='default'
-)
-
-# baseado na default
-PRISM = Palette(
-    background='#0083d5',
-    base_light='#12c5ff',
-    base_dark='#1075f6',
-    glyph_light='#146ab3ff',
-    glyph_dark='#06314eff',
-    identifier='prism'
 )
 
 # baseado no ícone winefile
@@ -142,12 +111,26 @@ def declare_glyph_gradient(defs, palette: Palette):
         }
     )
 
+def normalize_hex_value(value: str):
+    if not value.startswith('#'):
+        value = f'#{value}'
+
+    # 6 + 1 pq a hashtag conta como caractere,
+    # então no total um código comum de hex tem 7 chars
+    if len(value) > 7 and value.endswith('ff'):
+        value = value.removeprefix('ff')
+
+    return value
+
 def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
     # obter todos as propriedades presentes na classe da paleta,
     # pegar a paleta base padrão e substituir as cores antigas pelas novas
     for f in fields(DEFAULT):
         old = getattr(DEFAULT, f.name)
         new = getattr(new_palette, f.name)
+
+        old = normalize_hex_value(old)
+        new = normalize_hex_value(new)
 
         if new is None or old is None:
             continue
@@ -156,13 +139,7 @@ def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
 
     return svg_string
 
-def draw_directory(
-    base: Path,
-    glyph: Path,
-    output_directory: Path,
-    palette: Palette = DEFAULT,
-    prettify: bool = True
-    ):
+def draw_directory(base: Path, glyph: Path, output_directory: Path, palette: Palette = DEFAULT):
     output_directory.mkdir(exist_ok=True, parents=True)
 
     glyph_group = get_glyph(glyph)
@@ -201,20 +178,18 @@ def draw_directory(
         encoding='UTF-8'
     )
 
+    # formatação
+    options = scour.sanitizeOptions()
+    options.indent_spaces = 4
+    options.remove_metadata = True
+    options.shorten_ids = False # mantém os ids iguais
+
     # transformar o svg em texto e alterar as cores de acordo com a paleta
     svg_input = open(output, 'r').read()
     svg_input = find_and_replace_base_colors(svg_input, palette)
-    svg_output = svg_input
 
-    # formatação
-    if prettify:
-        options = scour.sanitizeOptions()
-        options.indent_spaces = 4
-        options.remove_metadata = True
-        options.shorten_ids = False # mantém os ids iguais
-
-        # converter de volta pra uma string scour e escrever como svg
-        svg_output = scour.scourString(svg_input, options)
+    # converter de volta pra uma string scour e escrever como svg
+    svg_output = scour.scourString(svg_input, options)
 
     with open(output, 'w') as f:
         f.write(svg_output)
@@ -222,16 +197,11 @@ def draw_directory(
 TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
 OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
 GLYPHS = TEMPLATES / 'glyphs'
-BASES = TEMPLATES.glob('*.svg')
+BASES = [TEMPLATES / 'folder.svg', TEMPLATES / 'folder-outer.svg']
 
 for glyph in GLYPHS.rglob('*.svg'):
     for base in BASES:
-        for palette in [
-            DEFAULT,
-            PRISM,
-            #yellow,
-            #yellow_win
-            ]:
+        for palette in [DEFAULT, yellow, yellow_win]:
             output = OUTPUT / base.stem
 
             if palette.identifier is not None:

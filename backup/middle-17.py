@@ -19,9 +19,8 @@ def normalize_hex_value(value: str):
     # 6 + 1 pq a hashtag conta como caractere,
     # então no total um código comum de hex tem 7 chars
     if len(value) > 7 and value.endswith('ff'):
-        value = value.removesuffix('ff')
+        value = value.removeprefix('ff')
 
-    print(f'valor normalizado: {value}')
     return value
 
 @dataclass
@@ -34,13 +33,12 @@ class Palette:
     identifier: str = None
 
     def __post_init__(self):
-        for f in fields(self):
-            if f.name == 'identifier':
-                continue
+        self.normalize()
 
-            value = getattr(self, f.name)
-            normalized = normalize_hex_value(value)
-            setattr(self, f.name, normalized)
+    def normalize(self):
+        for f in fields(self):
+            f = getattr(self, f.name)
+            self.f = normalize_hex_value(f)
 
 DEFAULT = Palette(
     background='#0083d5',
@@ -49,16 +47,6 @@ DEFAULT = Palette(
     glyph_light='#126c98',
     glyph_dark='#0b4f94',
     identifier='default'
-)
-
-# baseado na default
-PRISM = Palette(
-    background='#0083d5',
-    base_light='#12c5ff',
-    base_dark='#1075f6',
-    glyph_light='#146ab3ff',
-    glyph_dark='#06314eff',
-    identifier='prism'
 )
 
 # baseado no ícone winefile
@@ -156,13 +144,7 @@ def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
 
     return svg_string
 
-def draw_directory(
-    base: Path,
-    glyph: Path,
-    output_directory: Path,
-    palette: Palette = DEFAULT,
-    prettify: bool = True
-    ):
+def draw_directory(base: Path, glyph: Path, output_directory: Path, palette: Palette = DEFAULT):
     output_directory.mkdir(exist_ok=True, parents=True)
 
     glyph_group = get_glyph(glyph)
@@ -201,20 +183,18 @@ def draw_directory(
         encoding='UTF-8'
     )
 
+    # formatação
+    options = scour.sanitizeOptions()
+    options.indent_spaces = 4
+    options.remove_metadata = True
+    options.shorten_ids = False # mantém os ids iguais
+
     # transformar o svg em texto e alterar as cores de acordo com a paleta
     svg_input = open(output, 'r').read()
     svg_input = find_and_replace_base_colors(svg_input, palette)
-    svg_output = svg_input
 
-    # formatação
-    if prettify:
-        options = scour.sanitizeOptions()
-        options.indent_spaces = 4
-        options.remove_metadata = True
-        options.shorten_ids = False # mantém os ids iguais
-
-        # converter de volta pra uma string scour e escrever como svg
-        svg_output = scour.scourString(svg_input, options)
+    # converter de volta pra uma string scour e escrever como svg
+    svg_output = scour.scourString(svg_input, options)
 
     with open(output, 'w') as f:
         f.write(svg_output)
@@ -222,16 +202,11 @@ def draw_directory(
 TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
 OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
 GLYPHS = TEMPLATES / 'glyphs'
-BASES = TEMPLATES.glob('*.svg')
+BASES = [TEMPLATES / 'folder.svg', TEMPLATES / 'folder-outer.svg']
 
 for glyph in GLYPHS.rglob('*.svg'):
     for base in BASES:
-        for palette in [
-            DEFAULT,
-            PRISM,
-            #yellow,
-            #yellow_win
-            ]:
+        for palette in [DEFAULT, yellow, yellow_win]:
             output = OUTPUT / base.stem
 
             if palette.identifier is not None:
