@@ -162,11 +162,11 @@ def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
 def draw_directory(
     base: Path,
     glyph_data: dict,
-    output_path: Path,
+    output_directory: Path,
     palette: Palette = DEFAULT,
     prettify: bool = True
     ):
-    output_path.parent.mkdir(exist_ok=True, parents=True)
+    output_directory.mkdir(exist_ok=True, parents=True)
 
     tree = ET.parse(base)
     root = tree.getroot()
@@ -178,14 +178,16 @@ def draw_directory(
     draw_glyph(root, glyph_data)
     
     # escritura do svg
+    output_directory.mkdir(parents=True, exist_ok=True)
+    output = output_directory / (glyph_data.get('label') + '.svg')
     tree.write(
-        output_path,
+        output,
         xml_declaration=True,
         encoding='UTF-8'
     )
 
     # transformar o svg em texto e alterar as cores de acordo com a paleta
-    svg_input = open(output_path, 'r').read()
+    svg_input = open(output, 'r').read()
     svg_input = find_and_replace_base_colors(svg_input, palette)
     svg_output = svg_input
 
@@ -199,10 +201,10 @@ def draw_directory(
         # converter de volta pra uma string scour e escrever como svg
         svg_output = scour.scourString(svg_input, options)
 
-    with open(output_path, 'w') as f:
+    with open(output, 'w') as f:
         f.write(svg_output)
 
-def compose_all():
+def main():
     TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
     OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
 
@@ -228,33 +230,10 @@ def compose_all():
                 draw_directory(
                     base=base,
                     glyph_data=g,
-                    output_path=output,
+                    output_directory=output,
                     palette=palette,
                     #prettify=False
                 )
-
-def compose_prism():
-    TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
-    BASE = Path('/mnt/seagate/symlinks/copyhex/templates/folder.svg')
-    OUTPUT = Path('/mnt/seagate/symlinks/copydb/substitutes/places/')
-
-    json_glyphs = TEMPLATES / 'glyphs.json'
-    with json_glyphs.open('r', encoding='utf-8') as f:
-        glyphs = json.load(f)
-
-    for g in glyphs:
-        print(f'processando o glifo {g.get('label')}')
-
-        output = OUTPUT / (g.get('label') + '.svg')
-        draw_directory(
-            base=BASE,
-            glyph_data=g,
-            output_path=output,
-            palette=PRISM
-        )
-
-def main():
-    compose_prism()
 
 main()
 
