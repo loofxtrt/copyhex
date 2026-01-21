@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-import json
 from copy import deepcopy
 from pathlib import Path
 from dataclasses import dataclass, fields
@@ -12,12 +11,6 @@ namespace = {
     'svg': svg_ns,
     'ink': inkscape_ns
 }
-
-def error(text):
-    print(f"\033[31m{text}\033[0m")
-
-def success(text):
-    print(f"\033[32m{text}\033[0m")
 
 def normalize_hex_value(value: str):
     if not value.startswith('#'):
@@ -88,24 +81,49 @@ yellow_win = Palette(
     identifier='yellow-win'
 )
 
-def draw_glyph(root, data: dict):
-    group = ET.SubElement(
-        root,
-        'g',
-        {
-            'id': 'glyph'
-        }
-    )
+def sanitize_glyph_group(glyph_group):
+    for elem in glyph_group.iter():
+        # remove classes (ColorScheme-Text, etc)
+        elem.attrib.pop("class", None)
 
-    for p in data.get('paths'):
-        el = ET.SubElement(
-            group,
-            'path',
-            {
-                'd': p,
-                'fill': 'url(#glyph-gradient)'
-            }
-        )
+        # remove atributos de apresentação direta
+        for attr in [
+            "fill",
+            "stroke",
+            "color",
+            "opacity",
+            "mix-blend-mode",
+            "fill-opacity",
+            "stroke-opacity"
+        ]:
+            elem.attrib.pop(attr, None)
+
+        # limpa style completamente
+        if "style" in elem.attrib:
+            elem.attrib.pop("style")
+
+def get_glyph(svg: Path):
+    """
+    isso espera que o svg passado tenha um grupo com um label ou id específico
+    o que estiver dentro desse grupo vai ser considerado como parte do glifo
+    """
+
+    tree = ET.parse(svg)
+    root = tree.getroot()
+
+    glyph_group = root.find(".//svg:g[@id='glyph']", namespace)
+    if glyph_group is not None:
+        return glyph_group
+
+    glyph_group = root.find(".//svg:g[@ink:label='glyph']", namespace)
+    if glyph_group is not None:
+        return glyph_group
+        
+    # glyph_group = root.find(".//svg:g[@id='g6']", namespace)
+    # if glyph_group is not None:
+    #     return glyph_group
+    
+    return None
 
 def declare_glyph_gradient(defs, palette: Palette):
     # remover uma possível declaração já existente de um gradiente com o mesmo id
@@ -119,10 +137,10 @@ def declare_glyph_gradient(defs, palette: Palette):
         {
             'id': 'glyph-gradient',
             'x1': '0',
-            'y1': '48',
+            'y1': '1',
             'x2': '0',
             'y2': '0',
-            'gradientUnits': 'userSpaceOnUse' # vai do bottom ao top do svg em linha reta
+            'gradientUnits': 'objectBoundingBox' # vai do bottom ao top do svg em linha reta
         }
     )
     
@@ -161,25 +179,43 @@ def find_and_replace_base_colors(svg_string: str, new_palette: Palette):
 
 def draw_directory(
     base: Path,
-    glyph_data: dict,
+    glyph: Path,
     output_directory: Path,
     palette: Palette = DEFAULT,
     prettify: bool = True
     ):
     output_directory.mkdir(exist_ok=True, parents=True)
 
+    glyph_group = get_glyph(glyph)
+    if glyph_group is None:
+        print(f'x > glyph group não encontrado para {glyph.name}')
+        return
+    else:
+        print(f'o > glyph group encontrado para {glyph.name}')
+
     tree = ET.parse(base)
     root = tree.getroot()
+    
+    glyph_copy = deepcopy(glyph_group)
+    root.append(glyph_copy)
+
+    # aplicar gradiente em todos os paths do glifo
+    for path in glyph_copy.findall(".//svg:path", namespace):
+        path.set("fill", "url(#glyph-gradient)")
+        if "style" in path.attrib:
+            # opcional: remover fill antigo do style
+            styles = path.attrib["style"].split(";")
+            styles = [s for s in styles if not s.startswith("fill:")]
+            styles.append("fill:url(#glyph-gradient)")
+            path.set("style", ";".join(styles))
 
     # declaração do gradiente do glifo nas defs
     defs = root.find('svg:defs', namespace)
-    declare_glyph_gradient(defs, palette)
-
-    draw_glyph(root, glyph_data)
+    declare_glyph_gradient(defs, DEFAULT)
     
     # escritura do svg
     output_directory.mkdir(parents=True, exist_ok=True)
-    output = output_directory / (glyph_data.get('label') + '.svg')
+    output = output_directory / glyph.name
     tree.write(
         output,
         xml_declaration=True,
@@ -204,38 +240,32 @@ def draw_directory(
     with open(output, 'w') as f:
         f.write(svg_output)
 
-def main():
-    TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
-    OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
+TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
+OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
+GLYPHS = TEMPLATES / 'glyphs'
+BASES = TEMPLATES.glob('*.svg')
 
-    json_glyphs = TEMPLATES / 'glyphs.json'
-    with json_glyphs.open('r', encoding='utf-8') as f:
-        glyphs = json.load(f)
+for glyph in GLYPHS.rglob('*.svg'):
+    print(f'processando o glifo {glyph.name}')
+    
+    for base in BASES:
+        for palette in [
+            DEFAULT,
+            PRISM,
+            yellow,
+            yellow_win
+            ]:
+            output = OUTPUT / base.stem
 
-    for g in glyphs:
-        print(f'processando o glifo {g.get('label')}')
+            if palette.identifier is not None:
+                output = output / palette.identifier
 
-        for base in TEMPLATES.glob('*.svg'):
-            for palette in [
-                DEFAULT,
-                PRISM,
-                yellow,
-                yellow_win
-                ]:
-                output = OUTPUT / base.stem
-
-                if palette.identifier is not None:
-                    output = output / palette.identifier
-
-                draw_directory(
-                    base=base,
-                    glyph_data=g,
-                    output_directory=output,
-                    palette=palette,
-                    #prettify=False
-                )
-
-main()
+            draw_directory(
+                base=base,
+                glyph=glyph,
+                output_directory=output,
+                palette=palette
+            )
 
 # - [ ] documentar como o gradiente foi obtido
 
