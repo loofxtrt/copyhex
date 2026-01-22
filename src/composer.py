@@ -203,8 +203,8 @@ def draw_directory(
         f.write(svg_output)
 
 def compose_all():
-    TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
-    OUTPUT = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output')
+    TEMPLATES = Path('/mnt/seagate/workspace/coding/projetos/scripts/copyhex/templates')
+    OUTPUT = Path('/mnt/seagate/workspace/coding/projetos/scripts/copyhex/output')
 
     json_glyphs = TEMPLATES / 'glyphs.json'
     with json_glyphs.open('r', encoding='utf-8') as f:
@@ -234,7 +234,7 @@ def compose_all():
                 )
 
 def compose_prism():
-    TEMPLATES = Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates')
+    TEMPLATES = Path('/mnt/seagate/workspace/coding/projetos/scripts/copyhex/templates')
     BASE = Path('/mnt/seagate/symlinks/copyhex/templates/folder.svg')
     OUTPUT = Path('/mnt/seagate/symlinks/copydb/substitutes/places/')
 
@@ -257,20 +257,3 @@ def main():
     compose_prism()
 
 main()
-
-# - [ ] documentar como o gradiente foi obtido
-
-# for glyph in Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates/glyphs').rglob('*.svg'):
-#     draw_directory(
-#         Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates/folder.svg'),
-#         glyph,
-#         Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output'),
-#         yellow
-#     )
-
-# for glyph in Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates/glyphs').rglob('*.svg'):
-#     draw_directory(
-#         Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/templates/folder-outer.svg'),
-#         glyph,
-#         Path('/mnt/seagate/workspace/coding/projects/scripts/copyhex/output/outer')
-#     )
